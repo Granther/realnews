@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Neutralizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col min-h-screen">
+    <header class="bg-gray-800 p-4 text-center">
+        <h1 class="text-3xl text-white">News Neutralizer</h1>
+    </header>
+
+    <div class="relative container mx-auto px-40 py-8 flex-grow text-white h-full">
+        <h1 class="text-xl text-white text-center pb-5">Paste in an Article</h1>
+        <div id="chat-container" class="grid grid-cols-1 gap-6 min-h-full text-center">
+            <form id="form">
+                <textarea id="autoResizeTextarea" name="user-article-input" class="w-full min-h-60 p-3 border border-blue-700 rounded-lg bg-blue-900 text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 resize-none overflow-hidden" placeholder="Type your message here..."></textarea>
+                <div class="grid grid-cols-1 py-5">
+                    <button id="submit-button" type="submit" class="border border-blue-700 rounded-lg bg-blue-900 text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 mx-auto p-3">Check</button>
+                </div>
+            </form>
+            <div id="2-col-show" class="grid grid-cols-2 gap-6 min-h-full text-center">
+            </div>
+        </div>
+    </div>
+    <footer class="bg-gray-800 p-4 text-center text-white">
+        <p>&copy; 2024 The RealNews. All rights reserved.</p>
+    </footer>
+    <script>
+        // Send contents of form to backend via websocket
+        // Respond as stream with AI stuff
+
+        const chatContainer = document.getElementById('chat-container');
+        const twoColShow = document.getElementById('2-col-show');
+        const socket = io.connect('http://localhost:5000');
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            socket.emit("connected")
+        });
+    
+        document.getElementById("form").addEventListener("submit", function (event) {
+            event.preventDefault();
+            document.getElementById('submit-button').classList.toggle('hidden');
+
+            const formdata = new FormData(this);
+            let userArticleInput = formdata.get("user-article-input");
+
+            socket.emit("recieve_article", userArticleInput);
+
+            var bias = document.createElement('div');
+            bias.innerHTML = '<h1 class="text-xl text-white text-center pb-5">Bias</h1><p></p>'
+            twoColShow.appendChild(bias);
+
+            socket.on("stream_bias", function (data) {
+                console.log(data)
+                bias.querySelector('p').innerHTML = data
+            });
+
+            var untrue = document.createElement('div');
+            untrue.innerHTML = '<h1 class="text-xl text-white text-center pb-5">Please Check</h1><p></p>'
+            twoColShow.appendChild(untrue);
+
+            socket.on("stream_untrue", function (data) {
+                console.log(data)
+                untrue.querySelector('p').innerHTML = data
+            });
+        });
+
+        document.getElementById("autoResizeTextarea").addEventListener('input', function(event) {
+          if (event.target.id === 'autoResizeTextarea') {
+            event.target.style.height = 'auto';
+            event.target.style.height = `${event.target.scrollHeight}px`;
+          }
+        });
+
+        function getBias(userArticleInput) {
+            console.log(userArticleInput)
+        };
+
+
+        socket.on('stream_data', (data) => {
+            console.log("recieinv stream")
+            const messages = data.split('\n\n'); // Split messages by double newline
+            messages.forEach((message) => {
+                console.log(message)
+                // if (message.trim()) {
+                //     const p = document.createElement('p');
+                //     p.textContent = message.replace('data: ', '');
+                //     document.getElementById('messages').appendChild(p);
+                // }
+            });
+        });
+
+        // document.addEventListener('click', function (event) {
+        //     event.preventDefault();
+
+        // });
+
+
+        // function readStream(formdata) {
+        //     console.log(formdata.get("user-input"))
+        //     const chatContainer = document.getElementById('chat-container');
+
+        //     // Add an empty message div to show the streaming response
+        //     const newMessage = document.createElement('div');
+        //     newMessage.className = "flex self-start text-white py-2 px-4 rounded-md"
+        //     chatContainer.appendChild(newMessage);
+
+        //     const eventSource = new EventSource(`/stream?prompt=${encodeURIComponent(formdata.get("use"))}`);
+
+        //     eventSource.onmessage = function(event) {
+        //         // Append the streamed data to the message div
+        //         newMessage.innerHTML = `${event.data}`;
+                
+        //         // Scroll to the bottom of the container
+        //         chatContainer.scrollTop = chatContainer.scrollHeight;
+        //     };
+
+        //     eventSource.onerror = function() {
+        //         // Close the connection if there's an error
+        //         eventSource.close();
+        //     };
+        // }
+
+      </script>
+</body>
+</html>
+
+
+<!-- <div class="relative container mx-auto px-4 py-8 flex-grow text-black">
+    <div class="grid grid-cols-1 gap-6">
+            <div class="bg-white rounded-lg hover:shadow-lg hover:shadow-blue-500/70 overflow-hidden">
+                <div class="p-4">
+                </div>
+            </div>
+        </a>
+    </div>
+</div> -->
